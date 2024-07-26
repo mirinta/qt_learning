@@ -1,0 +1,6 @@
+{
+	"className": "GObject",
+	"properties": ["value", "word"],
+	"value": 666,
+	"word": "hahaha"
+}
