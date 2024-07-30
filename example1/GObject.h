@@ -9,9 +9,6 @@ class GObject : public QObject
     Q_PROPERTY(QString word READ word WRITE setWord NOTIFY wordChanged)
 
 public:
-    /**
-     * Q_INVOKABLE!
-     */
     Q_INVOKABLE explicit GObject(QObject* parent = nullptr) : QObject(parent){};
 
     int value() const { return _value; }
@@ -49,6 +46,8 @@ class ObjectFactory
     Q_DISABLE_COPY_MOVE(ObjectFactory);
 
 public:
+    ~ObjectFactory() = default;
+
     static ObjectFactory& instance()
     {
         static ObjectFactory factory;
@@ -56,20 +55,22 @@ public:
     }
 
     template <Derived<QObject> T>
-    void registerClass()
+    bool registerClass()
     {
-        if (const auto meta = T::staticMetaObject; !_map.contains(meta.className())) {
-            _map[meta.className()] = meta;
-        }
+        const auto meta = T::staticMetaObject;
+        if (_map.contains(meta.className()))
+            return false;
+
+        _map[meta.className()] = meta;
+        return true;
     }
 
-    std::unique_ptr<QObject> createInstance(const QString& className) const
+    std::unique_ptr<GObject> createInstance(const QString& className) const
     {
         if (!_map.contains(className))
             return {};
 
-        std::unique_ptr<QObject> ptr(_map.at(className).newInstance());
-        return ptr;
+        return std::make_unique<GObject>(static_cast<GObject*>(_map.at(className).newInstance()));
     }
 
 private:
